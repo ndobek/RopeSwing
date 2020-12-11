@@ -9,6 +9,14 @@
 /[Bb]uilds/
 /[Ll]ogs/
 /[Mm]emoryCaptures/
+/[Aa]ssets/_TerrainAutoUpgrade
+/[Aa]ssets/EasyRoads3D Assets
+/[Aa]ssets/ExampleAssets
+/[Aa]ssets/NatureManufacture Assets - Trials Not Full Resolution
+/[Aa]ssets/TutorialInfo
+/[Aa]ssets/Windridge City Assets
+/[Aa]ssets/Scenes/Windridge City Demo Scene
+/[Aa]ssets/Scenes/Windridge City Demo Scene.unity
 
 # Never ignore Asset meta data
 !/[Aa]ssets/**/*.meta
