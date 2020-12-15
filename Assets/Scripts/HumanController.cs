@@ -2,11 +2,12 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+[RequireComponent(typeof(Rigidbody))]
 public class HumanController : MonoBehaviour, IController
 {
-    public Rigidbody rigidBody;
-    public Transform movementTransform;
-    public Transform lookTransform;
+    [HideInInspector]
+    public Rigidbody rb;
+    public Transform t;
 
     public class TransformState
     {
@@ -15,45 +16,20 @@ public class HumanController : MonoBehaviour, IController
 
         public void SetFromTransform(Transform t)
         {
-            SetPositionFromTransform(t);
-            SetRotationFromTransform(t);
-        }
-
-        public void SetPositionFromTransform(Transform t)
-        {
-            position = t.position;
-        }
-        public void SetRotationFromTransform(Transform t)
-        {
             rotation = t.eulerAngles;
-        }
-
-        public void Rotate(Vector3 _rotation)
-        {
-            rotation += _rotation;
+            position = t.position;
         }
 
         public void Translate(Vector3 translation)
         {
             Vector3 rotatedTranslation = Quaternion.Euler(rotation) * translation;
-            rotatedTranslation *= Time.deltaTime;
             position += rotatedTranslation;
         }
 
-        public void LerpPosition(TransformState target, float positionLerpPct)
-        {
-            position = Vector3.Lerp(position, target.position, positionLerpPct);
-        }
-        public void LerpRotation(TransformState target, float rotationLerpPct)
-        {
-            rotation = Vector3.Lerp(rotation, target.rotation, rotationLerpPct);
-        }
-
-
         public void LerpTowards(TransformState target, float positionLerpPct, float rotationLerpPct)
         {
-            LerpPosition(target, positionLerpPct);
-            LerpRotation(target, rotationLerpPct);
+            position = Vector3.Lerp(position, target.position, positionLerpPct);
+            rotation = Vector3.Lerp(rotation, target.rotation, rotationLerpPct);
         }
 
         public void UpdateTransform(Transform t)
@@ -66,7 +42,6 @@ public class HumanController : MonoBehaviour, IController
     private TransformState targetState = new TransformState();
     private TransformState interpolatingState = new TransformState();
 
-    public float rotationAcceleration;
     public float moveAcceleration;
     public float moveSpeed;
     public float sprintSpeed;
@@ -84,22 +59,17 @@ public class HumanController : MonoBehaviour, IController
 
     private void Rotate(Vector3 input)
     {
-        targetState.Rotate(input);
-        interpolatingState.LerpRotation(targetState, rotationAcceleration);
-        rigidBody.rotation = Quaternion.Euler(new Vector3(interpolatingState.rotation.x, interpolatingState.rotation.y));
-        lookTransform.rotation = Quaternion.Euler(interpolatingState.rotation);
+        t.Rotate(input, Space.Self);
     }
-
+    test
     public void Move(Vector3 input)
     {
-        targetState.SetPositionFromTransform(movementTransform);
-        interpolatingState.SetPositionFromTransform(movementTransform);
         if (onGround)
         {
+            targetState.SetFromTransform(t);
             targetState.Translate(input * moveSpeed);
-            interpolatingState.LerpPosition(targetState, moveAcceleration);
-            rigidBody.MovePosition(interpolatingState.position);
-
+            interpolatingState.LerpTowards(targetState, moveAcceleration, moveAcceleration);
+            rb.AddRelativeForce(t.position - interpolatingState.position, ForceMode.VelocityChange);
         }
     }
 
@@ -116,20 +86,19 @@ public class HumanController : MonoBehaviour, IController
 
     private void Awake()
     {
-        if(rigidBody == null) rigidBody = GetComponent<Rigidbody>();
-        if(movementTransform == null) movementTransform = GetComponent<Transform>();
+        rb = GetComponent<Rigidbody>();
+        t = GetComponent<Transform>();
     }
 
     private void OnEnable()
     {
-        targetState.SetFromTransform(movementTransform);
-        interpolatingState.SetFromTransform(movementTransform);
+        targetState.SetFromTransform(t);
+        interpolatingState.SetFromTransform(t);
     }
 
 
     private void Update()
     {
         CheckOnGround();
-
     }
 }
