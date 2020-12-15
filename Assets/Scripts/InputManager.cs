@@ -40,7 +40,7 @@ public class InputManager : MonoBehaviour
 
     private Vector3 GetInputRotation()
     {
-        var mouseMovement = new Vector3(Input.GetAxis("Mouse Y") * (invertY ? 1 : -1), Input.GetAxis("Mouse X"));
+        var mouseMovement = new Vector3(Input.GetAxis("Mouse X"), Input.GetAxis("Mouse Y") * (invertY ? 1 : -1));
 
         var mouseSensitivityFactor = mouseSensitivityCurve.Evaluate(mouseMovement.magnitude);
 
