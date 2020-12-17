@@ -6,73 +6,20 @@ public class HumanController : MonoBehaviour, IController
 {
     public Rigidbody rigidBody;
     public Transform movementTransform;
+
     public Transform lookTransform;
-
-    public class TransformState
-    {
-        public Vector3 position;
-        public Vector3 rotation;
-
-        public void SetFromTransform(Transform t)
-        {
-            SetPositionFromTransform(t);
-            SetRotationFromTransform(t);
-        }
-
-        public void SetPositionFromTransform(Transform t)
-        {
-            position = t.position;
-        }
-        public void SetRotationFromTransform(Transform t)
-        {
-            rotation = t.eulerAngles;
-        }
-
-        public void Rotate(Vector3 _rotation)
-        {
-            rotation += _rotation;
-        }
-
-        public void Translate(Vector3 translation)
-        {
-            Vector3 rotatedTranslation = Quaternion.Euler(rotation) * translation;
-            position += rotatedTranslation;
-        }
-
-        public void LerpPosition(TransformState target, float positionLerpPct)
-        {
-            position = Vector3.Lerp(position, target.position, positionLerpPct);
-        }
-        public void LerpRotation(TransformState target, float rotationLerpPct)
-        {
-            rotation = Vector3.Lerp(rotation, target.rotation, rotationLerpPct);
-        }
-
-
-        public void LerpTowards(TransformState target, float positionLerpPct, float rotationLerpPct)
-        {
-            LerpPosition(target, positionLerpPct);
-            LerpRotation(target, rotationLerpPct);
-        }
-
-        public void UpdateTransform(Transform t)
-        {
-            t.eulerAngles = rotation;
-            t.position = position;
-        }
-    }
-
-    private TransformState targetState = new TransformState();
+    private float cameraPitch;
+    private float cameraYaw;
 
     public float moveSpeed;
-    public float rotationSpeed;
     public float sprintSpeed;
-    public float stepHeight;
-    public float maxSlope;
+    //public float stepHeight;
+    //public float maxSlope;
 
     private bool sprinting;
-    public float airMoveSpeed;
-    public float drag;
+    public bool snappyAirControl = false;
+    public float airControl;
+    //public float drag;
 
     public float jumpHeight;
 
@@ -80,27 +27,30 @@ public class HumanController : MonoBehaviour, IController
     public bool onGround;
     public LayerMask whatIsGround;
 
-    private void Rotate(Vector3 input)
-    {
-        targetState.SetRotationFromTransform(lookTransform);
-        targetState.Rotate(input);
-        lookTransform.rotation = Quaternion.Euler(targetState.rotation);
-    }
-
     public void Move(Vector3 input)
     {
-        targetState.SetPositionFromTransform(movementTransform);
+        Vector3 newVelocity = rigidBody.velocity;
         if (onGround)
         {
-            targetState.Translate(input * (sprinting? sprintSpeed : moveSpeed));
-            //rigidBody.MovePosition(targetState.position);
-            rigidBody.AddForce(targetState.position - movementTransform.position, ForceMode.VelocityChange);
+            Vector3 v = Quaternion.Euler(0, lookTransform.rotation.eulerAngles.y, 0) * input;
+            v *= sprinting ? sprintSpeed : moveSpeed;
+            rigidBody.velocity = new Vector3(v.x, newVelocity.y, v.z);
+        }
+        else
+        {
+            Vector3 v = Quaternion.Euler(0, lookTransform.rotation.eulerAngles.y, 0) * input;
+            v *= airControl;
+
+            if(snappyAirControl) rigidBody.MovePosition(movementTransform.position + v);
+            else rigidBody.velocity += v;
         }
     }
 
     public void Look(Vector3 input)
     {
-        Rotate(input * rotationSpeed);
+        cameraPitch += input.x;
+        cameraYaw += input.y;
+        lookTransform.rotation = Quaternion.Euler(new Vector3(cameraPitch, cameraYaw, 0));
     }
 
     public void Jump()
@@ -120,11 +70,6 @@ public class HumanController : MonoBehaviour, IController
         if (movementTransform == null) movementTransform = GetComponent<Transform>();
     }
 
-    private void OnEnable()
-    {
-        targetState.SetFromTransform(movementTransform);
-    }
-
     public void Sprint(bool onOff)
     {
         sprinting = onOff;
@@ -134,6 +79,5 @@ public class HumanController : MonoBehaviour, IController
     private void Update()
     {
         CheckOnGround();
-
     }
 }

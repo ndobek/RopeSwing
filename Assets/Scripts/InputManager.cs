@@ -36,7 +36,7 @@ public class InputManager : MonoBehaviour
         {
             direction += Vector3.up;
         }
-        return direction * Time.deltaTime;
+        return direction.normalized * Time.deltaTime;
     }
 
     private Vector3 GetInputRotation()
