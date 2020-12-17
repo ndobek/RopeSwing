@@ -6,4 +6,6 @@ public interface IController
 {
     void Look(Vector3 input);
     void Move(Vector3 input);
+    void Sprint(bool onOff);
+    void Jump();
 }

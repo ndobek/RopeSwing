@@ -6,6 +6,7 @@ public class InputManager : MonoBehaviour
 {
     public IController controller;
     public bool invertY;
+    public float mouseSensitivityMultiplier = 1;
     public AnimationCurve mouseSensitivityCurve;
 
     Vector3 GetInputTranslationDirection()
@@ -35,18 +36,18 @@ public class InputManager : MonoBehaviour
         {
             direction += Vector3.up;
         }
-        return direction;
+        return direction * Time.deltaTime;
     }
 
     private Vector3 GetInputRotation()
     {
-        var mouseMovement = new Vector3(Input.GetAxis("Mouse X"), Input.GetAxis("Mouse Y") * (invertY ? 1 : -1));
+        var mouseMovement = new Vector3(Input.GetAxis("Mouse Y") * (invertY ? 1 : -1), Input.GetAxis("Mouse X"));
 
-        var mouseSensitivityFactor = mouseSensitivityCurve.Evaluate(mouseMovement.magnitude);
+        var mouseSensitivityFactor = mouseSensitivityCurve.Evaluate(mouseMovement.magnitude) * mouseSensitivityMultiplier;
 
         mouseMovement *= mouseSensitivityFactor;
 
-        return mouseMovement;
+        return mouseMovement * Time.deltaTime;
     }
     private void Awake()
     {
@@ -54,6 +55,8 @@ public class InputManager : MonoBehaviour
     }
     public void Update()
     {
+        if (Input.GetKeyDown(KeyCode.Space)) controller.Jump();
+        controller.Sprint(Input.GetKey(KeyCode.LeftShift));
         controller.Move(GetInputTranslationDirection());
         controller.Look(GetInputRotation());
     }
