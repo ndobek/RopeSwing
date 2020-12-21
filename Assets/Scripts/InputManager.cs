@@ -52,6 +52,7 @@ public class InputManager : MonoBehaviour
     private void Awake()
     {
         controller = GetComponent<IController>();
+        Cursor.lockState = CursorLockMode.Locked;
     }
     public void Update()
     {
@@ -59,5 +60,13 @@ public class InputManager : MonoBehaviour
         controller.Sprint(Input.GetKey(KeyCode.LeftShift));
         controller.Move(GetInputTranslationDirection());
         controller.Look(GetInputRotation());
+
+        if (Input.GetKeyDown(KeyCode.Escape)) ToggleMouseLock();
+    }
+
+    private void ToggleMouseLock()
+    {
+        if (Cursor.lockState == CursorLockMode.Locked) Cursor.lockState = CursorLockMode.None;
+        else Cursor.lockState = CursorLockMode.Locked;
     }
 }

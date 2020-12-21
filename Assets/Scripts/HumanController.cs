@@ -11,6 +11,7 @@ public class HumanController : MonoBehaviour, IController
     private float cameraPitch;
     private float cameraYaw;
 
+    public float rotateSpeed;
     public float moveSpeed;
     public float maxAirSpeed;
     public float sprintSpeed;
@@ -65,6 +66,7 @@ public class HumanController : MonoBehaviour, IController
 
     public void Look(Vector3 input)
     {
+        input *= rotateSpeed;
         cameraPitch = Mathf.Clamp(cameraPitch + input.x, -90, 90);
         cameraYaw += input.y;
         lookTransform.rotation = Quaternion.Euler(new Vector3(cameraPitch, cameraYaw, 0));
@@ -79,11 +81,6 @@ public class HumanController : MonoBehaviour, IController
         }
 
     }
-    void OnDrawGizmos()
-    {
-        Gizmos.color = Color.red; 
-    }
-
 
     public void Jump()
     {
