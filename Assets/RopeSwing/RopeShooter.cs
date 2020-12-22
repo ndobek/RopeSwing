@@ -7,6 +7,10 @@ public class RopeShooter : MonoBehaviour
     public Rope ropeSettings;
     [HideInInspector]
     public Rope rope;
+    [SerializeField]
+    private GameObject projectilePrefab;
+    [HideInInspector]
+    private GameObject projectileInst;
     public LineRenderer lineRenderer;
     public LayerMask swingableSurfaces;
     public float maxDistance;
@@ -14,6 +18,7 @@ public class RopeShooter : MonoBehaviour
     private void Awake()
     {
         if (lineRenderer == null) lineRenderer = GetComponent<LineRenderer>();
+
     }
 
     private void Update()
@@ -25,7 +30,12 @@ public class RopeShooter : MonoBehaviour
             RaycastHit hit;
             //Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
             Ray ray = Camera.main.ScreenPointToRay(new Vector3(Camera.main.scaledPixelWidth / 2, Camera.main.scaledPixelHeight / 2));
-            if (Physics.Raycast(ray, out hit, maxDistance, swingableSurfaces)) rope = new Rope(transform.position, hit.point, ropeSettings);
+            if (Physics.Raycast(ray, out hit, maxDistance, swingableSurfaces))
+            {
+                if(projectileInst == null) projectileInst = GameObject.Instantiate(projectilePrefab);
+                projectileInst.transform.position = hit.point;
+                rope = new Rope(projectileInst.transform, transform, ropeSettings);
+            }
         }
         if (rope != null)
         {
