@@ -11,6 +11,7 @@ public class RopeShooter : MonoBehaviour
     private GameObject projectilePrefab;
     [HideInInspector]
     private GameObject projectileInst;
+    public Rigidbody rb;
     public LineRenderer lineRenderer;
     public LayerMask swingableSurfaces;
     public float maxDistance;
@@ -34,7 +35,10 @@ public class RopeShooter : MonoBehaviour
             {
                 if(projectileInst == null) projectileInst = GameObject.Instantiate(projectilePrefab);
                 projectileInst.transform.position = hit.point;
-                rope = new Rope(projectileInst.transform, transform, ropeSettings);
+                rope = new Rope(projectileInst.transform.position, transform.position, ropeSettings);
+                rope.Attach(projectileInst.transform, true, rope.Endpoint1);
+                rope.Attach(transform, false, rope.Endpoint2);
+
             }
         }
         if (rope != null)

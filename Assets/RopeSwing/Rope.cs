@@ -9,6 +9,8 @@ public class Rope
     public float ropeLength;
     public float ropeWidth;
 
+    public float mass = 1;
+
     public List<RopeSegment> ropeSegments = new List<RopeSegment>();
     public int numberOfSegments;
     public int numberOfSimulations;
@@ -18,29 +20,20 @@ public class Rope
     public RopeSegment Endpoint1 { get { return ropeSegments[0]; } }
     public RopeSegment Endpoint2 { get { return ropeSegments[ropeSegments.Count - 1]; } }
 
-    public Rope(Vector3 end1, Vector3 end2, int _numberOfSegments, int _numberOfSimulations, bool _collisions, LayerMask _collisionMask)
+
+    public void CopySettings(Rope settings)
     {
-        numberOfSegments = _numberOfSegments;
-        numberOfSimulations = _numberOfSimulations;
-        collisions = _collisions;
-        collisionMask = _collisionMask;
+        numberOfSegments = settings.numberOfSegments;
+        numberOfSimulations = settings.numberOfSimulations;
+        collisions = settings.collisions;
+        collisionMask = settings.collisionMask;
+        mass = settings.mass;
+    }
+    public Rope(Vector3 end1, Vector3 end2, Rope RopeSettings)
+    {
+        CopySettings(RopeSettings);
         InitializeRope(end1, end2);
     }
-
-    public Rope(Vector3 end1, Vector3 end2, int _numberOfSegments, int _numberOfSimulations) : this(end1, end2, _numberOfSegments, _numberOfSimulations, false, 0) { }
-
-    public Rope(Vector3 end1, Vector3 end2, Rope RopeSettings) : this(end1, end2, RopeSettings.numberOfSegments, RopeSettings.numberOfSimulations, RopeSettings.collisions, RopeSettings.collisionMask) { }
-
-    public Rope(Transform end1, Transform end2, Rope RopeSettings) : this(end1.position, end2.position, RopeSettings)
-    {
-        Attach(end1, Endpoint1);
-        Attach(end2, Endpoint2);
-    }
-    //public Rope(Transform end1, Rigidbody end2, Rope RopeSettings) : this(end1.position, end2.position, RopeSettings)
-    //{
-    //    Attach(end1, Endpoint1);
-    //    Attach(end2, Endpoint2);
-    //}
 
 
     public void InitializeRope(Vector3 end1, Vector3 end2)
@@ -58,11 +51,14 @@ public class Rope
         }
     }
 
-    public void Attach(Transform obj, RopeSegment ropeSegment)
+    public void Attach(Attachment obj, RopeSegment ropeSegment)
     {
-        ropeSegment.attachedTransform = obj;
+        ropeSegment.attachment = obj;
     }
-
+    public void Attach(Transform obj, bool lockPosition, RopeSegment ropeSegment)
+    {
+        Attach(new Attachment(obj, lockPosition), ropeSegment);
+    }
 
     public class RopeSegment
     {
@@ -70,10 +66,14 @@ public class Rope
         public Vector3 PosCurrent;
         public Vector3 PosPast;
 
+        public float Mass
+        {
+            get { return attachment == null ? rope.mass : rope.mass + attachment.Mass; }
+        }
+
         public float SegmentLength;
 
-        public Transform attachedTransform;
-        //public Rigidbody attachedRigidbody;
+        public Attachment attachment;
 
         private Vector3 GravityVector = new Vector3(0, -9.81f, 0);
 
@@ -90,6 +90,7 @@ public class Rope
             Vector3 velocity = PosCurrent - PosPast;
             PosPast = PosCurrent;
             velocity += GravityVector * Time.deltaTime * Time.deltaTime;
+
             Move(velocity);
         }
 
@@ -109,29 +110,65 @@ public class Rope
                 };
 
             }
-                PosCurrent += movement;
+            //if (attachment != null) attachment.MoveAttachment(movement);
+            /*else */PosCurrent += movement;
 
 
         }
 
-        public void SetFromTransform()
+        public void ConstrainAttached()
         {
-            if(attachedTransform) PosCurrent = attachedTransform.position;
+            if (attachment != null) attachment.ConstrainRope(this);
         }
 
-        public static void AdjustDistance(RopeSegment obj1, RopeSegment obj2, float distance)
+        public static void AdjustDistance(RopeSegment obj1, RopeSegment obj2, float targetDistance)
         {
             Vector3 difference = (Vector3)obj1 - (Vector3)obj2;
             Vector3 direction = difference.normalized;
-            float adjustmentDistance = (difference.magnitude - distance) * .5f;
+            float adjustmentDistance = (difference.magnitude - targetDistance) *.5f;
+            float adjustmentRatio1 = obj1.Mass == 0 ? .001f : 1/obj1.Mass;
+            float adjustmentRatio2 = obj2.Mass == 0 ? .001f : 1 / obj2.Mass;
 
-            obj2.Move(direction * adjustmentDistance);
-            obj1.Move(-direction * adjustmentDistance);
+            obj1.Move(-direction * adjustmentDistance * adjustmentRatio1);
+            obj2.Move(direction * adjustmentDistance * adjustmentRatio2);
+
         }
 
         public static explicit operator Vector3(RopeSegment obj) =>  obj.PosCurrent;
     }
 
+    public class Attachment
+    {
+        public Transform transform;
+        public Rigidbody rigidbody;
+
+        public bool lockPosition;
+
+        public float Mass
+        {
+            get { return rigidbody == null ? 0 : rigidbody.mass; }
+        }
+
+        public Attachment(Transform _transform, Rigidbody _rigidbody, bool _lockPosition)
+        {
+            transform = _transform;
+            rigidbody = _rigidbody;
+            lockPosition = _lockPosition;
+        }
+
+        public Attachment(Transform transform, bool lockPosition) : this(transform, null, lockPosition) { }
+
+
+        public void MoveAttachment(Vector3 movement)
+        {
+            if (!lockPosition && transform != null) transform.position += movement;
+        }
+
+        public void ConstrainRope(RopeSegment ropeSegment)
+        {
+            ropeSegment.PosCurrent = transform.position;
+        }
+    }
 
     public void physicsStep()
     {
@@ -154,9 +191,11 @@ public class Rope
         for(int i = 0; i < ropeSegments.Count - 1; i++)
         {
             RopeSegment.AdjustDistance(ropeSegments[i], ropeSegments[i + 1], ropeSegments[i + 1].SegmentLength);
-            ropeSegments[i].SetFromTransform();
         }
-        Endpoint2.SetFromTransform();
+        for (int i = 0; i < ropeSegments.Count; i++)
+        {
+            ropeSegments[i].ConstrainAttached();
+        }
     }
 
     public Vector3[] GetPositions()
