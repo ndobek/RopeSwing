@@ -15,6 +15,7 @@ public class RopeShooter : MonoBehaviour
     public LineRenderer lineRenderer;
     public LayerMask swingableSurfaces;
     public float maxDistance;
+    public int mouseButton;
 
     private void Awake()
     {
@@ -26,7 +27,7 @@ public class RopeShooter : MonoBehaviour
     {
 
 
-        if (Input.GetMouseButtonDown(0))
+        if (Input.GetMouseButtonDown(mouseButton))
         {
             RaycastHit hit;
             //Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
@@ -37,7 +38,7 @@ public class RopeShooter : MonoBehaviour
                 projectileInst.transform.position = hit.point;
                 rope = new Rope(projectileInst.transform.position, transform.position, ropeSettings);
                 rope.Attach(projectileInst.transform, true, rope.Endpoint1);
-                rope.Attach(transform, false, rope.Endpoint2);
+                rope.Attach(new Rope.Attachment(rb.transform, null, false, true), rope.Endpoint2);
 
             }
         }
