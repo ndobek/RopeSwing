@@ -10,7 +10,7 @@ public class Rope
     [HideInInspector]
     public float ropeLength;
 
-    public float springForce;
+    //public float elasticity;
     public float maxStretch = 1.1f;
     public float minStretch = .9f;
     public float dampening;
@@ -34,11 +34,6 @@ public class Rope
         numberOfSimulations = settings.numberOfSimulations;
         collisions = settings.collisions;
         collisionMask = settings.collisionMask;
-        springForce = settings.springForce;
-        maxStretch = settings.maxStretch;
-        minStretch = settings.minStretch;
-        dampening = settings.dampening;
-        drag = settings.drag;
         mass = settings.mass;
     }
     public Rope(Vector3 end1, Vector3 end2, Rope RopeSettings)
@@ -76,8 +71,7 @@ public class Rope
     {
         public Rope rope;
         public Vector3 PosCurrent;
-        public Vector3 velocity;
-        //public Vector3 PosPast;
+        public Vector3 PosPast;
 
         public float Mass
         {
@@ -94,16 +88,17 @@ public class Rope
         {
             rope = _rope;
             PosCurrent = pos;
-            velocity = Vector3.zero;
-            //PosPast = pos;
+            PosPast = pos;
             SegmentLength = segmentLength;
-
         }
 
-        public void AddForce(Vector3 force)
+        public void physicsStep()
         {
-            velocity += (force / Mass) * Time.deltaTime * Time.deltaTime;
+            Vector3 velocity = PosCurrent - PosPast;
+            PosPast = PosCurrent;
+            velocity += GravityVector * Time.deltaTime * Time.deltaTime;
 
+            Move(velocity);
         }
 
         public void Move(Vector3 movement)
@@ -119,17 +114,17 @@ public class Rope
                     //movement = (PosCurrent - hit.point);
                     //movement -= rope.ropeWidth * movement.normalized;
                     movement = Vector3.zero;
-                    velocity = Vector3.zero;
                 };
-            }
 
-
-            if (attachment != null)
-            {
-                attachment.MoveAttachment(this);
             }
+            //if (overrideSoftLock && attachment != null)
+            //{
+            //    attachment.MoveAttachment(movement);
+            //}
 
             PosCurrent += movement;
+
+
         }
 
         public void ConstrainAttached()
@@ -137,63 +132,20 @@ public class Rope
             if (attachment != null) attachment.ConstrainRope(this);
         }
 
-        public void physicsStep()
-        {
-            ////Vector3 velocity = PosCurrent - PosPast;
-            ////PosPast = PosCurrent;
-            ////velocity += GravityVector * Time.deltaTime * Time.deltaTime;
-
-            ////Vector3 forces = Vector3.zero;
-            ////Vector3 difference = (Vector3)obj1 - (Vector3)obj2;
-            ////Vector3 direction = difference.normalized;
-            ////float targetLength = obj2.SegmentLength;
-
-            //if (attachment != null && attachment.lockPosition) velocity = Vector3.zero;
-            Move(velocity);
-        }
-
-        public static Vector3 GetSpringforce(RopeSegment obj1, RopeSegment obj2, Rope RopeSettings)
-        {
-            Vector3 difference = (Vector3)obj2 - (Vector3)obj1;
-            Vector3 direction = difference.normalized;
-            float distance = difference.magnitude;
-            float adjustmentDistance = distance - obj2.SegmentLength;
-
-
-            float springForce = RopeSettings.springForce * adjustmentDistance;
-            float dampenForce = RopeSettings.dampening * (Vector3.Dot(obj2.velocity - obj1.velocity, difference) / distance);
-            return (springForce + dampenForce) * direction;
-        }
-
-        public static Vector3 GetDragForce(RopeSegment obj, Rope RopeSettings)
-        {
-            float v = obj.velocity.magnitude;
-            return obj.velocity.normalized * v * v * RopeSettings.drag;
-        }
-
-        public static Vector3 GetGravityForce(RopeSegment obj, Rope RopeSettings)
-        {
-            return obj.GravityVector * obj.Mass;
-        }
-
-        public static void AdjustDistance(RopeSegment obj1, RopeSegment obj2, Rope RopeSettings)
+        public static void AdjustDistance(RopeSegment obj1, RopeSegment obj2, float targetDistance, float maxStretch, float minStretch)
         {
             Vector3 difference = (Vector3)obj1 - (Vector3)obj2;
             Vector3 direction = difference.normalized;
-            float distance = difference.magnitude;
-            float targetDistance = obj2.SegmentLength;
+            float distance = difference.magnitude - targetDistance;
             float stretch = distance / targetDistance;
-            float maxStretch = RopeSettings.maxStretch;
-            float minStretch = RopeSettings.minStretch;
             float adjustmentDistance;
 
-
-
-            if (stretch > maxStretch) adjustmentDistance = distance - (targetDistance * maxStretch);
-            else if (stretch < minStretch) adjustmentDistance = distance - (targetDistance * minStretch);
-            else return;
+            if (stretch > maxStretch) adjustmentDistance = difference.magnitude - (targetDistance * maxStretch);
+            else if (stretch > minStretch) adjustmentDistance = difference.magnitude - (targetDistance * minStretch);
+            else adjustmentDistance = difference.magnitude - targetDistance;
 
             float adjustmentRatio1 = obj1.Mass / (obj1.Mass + obj2.Mass);
+            //if (obj1.attachment != null && obj1.attachment.lockPosition) adjustmentRatio1 = 0;
             float adjustmentRatio2 = 1 - adjustmentRatio1;
 
             obj1.Move(-direction * adjustmentDistance * adjustmentRatio1);
@@ -226,9 +178,9 @@ public class Rope
         public Attachment(Transform transform, bool lockPosition) : this(transform, null, lockPosition) { }
 
 
-        public void MoveAttachment(RopeSegment rope)
+        public void MoveAttachment(Vector3 movement)
         {
-            if (!lockPosition && transform != null) transform.position = rope.PosCurrent;
+            if (!lockPosition && transform != null) transform.position += movement;
         }
 
         public void ConstrainRope(RopeSegment ropeSegment)
@@ -245,25 +197,11 @@ public class Rope
     {
         if (ropeSegments != null && ropeSegments.Count > 0)
         {
-            List<Vector3> SpringForces = new List<Vector3>();
-            for (int i = 0; i < ropeSegments.Count - 1; i++)
+            foreach (RopeSegment segment in ropeSegments)
             {
-                SpringForces.Add(RopeSegment.GetSpringforce(ropeSegments[i], ropeSegments[i+1], this));
+                segment.physicsStep();
             }
-            SpringForces.Add(Vector3.zero);
-            for (int i = 0; i < ropeSegments.Count; i++)
-            { 
-                Vector3 allForces = Vector3.zero;
 
-                allForces += SpringForces[i];
-                if(i != 0) allForces -= SpringForces[i - 1];
-                allForces += RopeSegment.GetGravityForce(ropeSegments[i], this);
-                allForces -= RopeSegment.GetDragForce(ropeSegments[i], this);
-
-                if (i == 4) Debug.Log(allForces);
-                ropeSegments[i].AddForce(allForces);
-                ropeSegments[i].physicsStep();
-            }
             for (int i = 0; i < numberOfSimulations; i++)
             {
                 ApplyConstraints();
@@ -275,7 +213,7 @@ public class Rope
     {
         for (int i = 0; i < ropeSegments.Count - 1; i++)
         {
-            RopeSegment.AdjustDistance(ropeSegments[i], ropeSegments[i + 1], this);
+            RopeSegment.AdjustDistance(ropeSegments[i], ropeSegments[i + 1], ropeSegments[i + 1].SegmentLength, maxStretch, minStretch);
         }
         for (int i = 0; i < ropeSegments.Count; i++)
         {

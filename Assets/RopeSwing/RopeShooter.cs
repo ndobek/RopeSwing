@@ -38,15 +38,10 @@ public class RopeShooter : MonoBehaviour
                 projectileInst.transform.position = hit.point;
                 rope = new Rope(projectileInst.transform.position, transform.position, ropeSettings);
                 rope.Attach(projectileInst.transform, true, rope.Endpoint1);
-                rope.Attach(new Rope.Attachment(rb.transform, rb, false), rope.Endpoint2);
+                rope.Attach(rb.transform, false, rope.Endpoint2);
 
             }
         }
-
-    }
-
-    private void FixedUpdate()
-    {
         if (rope != null)
         {
             rope.physicsStep();
@@ -54,5 +49,3 @@ public class RopeShooter : MonoBehaviour
         }
     }
 }
-
-
