@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class RopeShooter : MonoBehaviour
+public class RopeShooterOld : MonoBehaviour
 {
     public float spring;
     public float damper;
