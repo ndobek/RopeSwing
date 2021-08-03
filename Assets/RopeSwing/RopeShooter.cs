@@ -4,9 +4,18 @@ using UnityEngine;
 
 public class RopeShooter : MonoBehaviour
 {
+    public float spring;
+    public float damper;
+    public float minStretch;
+    public float maxStretch;
+    public float maxDistance;
+
     public Rope ropeSettings;
     [HideInInspector]
     public Rope rope;
+    private SpringJoint joint;
+    [HideInInspector]
+    public Vector3 grapplePoint;
     [SerializeField]
     private GameObject projectilePrefab;
     [HideInInspector]
@@ -14,38 +23,69 @@ public class RopeShooter : MonoBehaviour
     public Rigidbody rb;
     public LineRenderer lineRenderer;
     public LayerMask swingableSurfaces;
-    public float maxDistance;
     public int mouseButton;
+
+    public bool ropeOut = false;
 
     private void Awake()
     {
         if (lineRenderer == null) lineRenderer = GetComponent<LineRenderer>();
+    }
 
+    void ShootRope()
+    {
+        ropeOut = true;
+        RaycastHit hit;
+        Ray ray = Camera.main.ScreenPointToRay(new Vector3(Camera.main.scaledPixelWidth / 2, Camera.main.scaledPixelHeight / 2));
+        if (Physics.Raycast(ray, out hit, maxDistance, swingableSurfaces))
+        {
+            grapplePoint = hit.point;
+            if (projectileInst == null) projectileInst = GameObject.Instantiate(projectilePrefab);
+            projectileInst.transform.position = grapplePoint;
+
+            // rope = new Rope(projectileInst.transform.position, transform.position, ropeSettings);
+            // rope.Attach(projectileInst.transform, true, rope.Endpoint1);
+            // rope.Attach(rb.transform, false, rope.Endpoint2);
+
+            float distance = Vector3.Distance(grapplePoint, rb.position);
+
+            joint = rb.gameObject.AddComponent<SpringJoint>();
+            joint.autoConfigureConnectedAnchor = false;
+            joint.connectedAnchor = grapplePoint;
+            joint.spring = spring;
+            joint.damper = damper;
+            joint.minDistance = distance * minStretch;
+            joint.maxDistance = distance * maxStretch;
+
+        }
+    }
+    void ReturnRope()
+    {
+        ropeOut = false;
+        Destroy(projectileInst);
+        Destroy(joint);
+        rope = null;
+        lineRenderer.positionCount = 0;
     }
 
     private void Update()
     {
-
-
         if (Input.GetMouseButtonDown(mouseButton))
         {
-            RaycastHit hit;
-            //Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-            Ray ray = Camera.main.ScreenPointToRay(new Vector3(Camera.main.scaledPixelWidth / 2, Camera.main.scaledPixelHeight / 2));
-            if (Physics.Raycast(ray, out hit, maxDistance, swingableSurfaces))
+            if (!ropeOut)
             {
-                if(projectileInst == null) projectileInst = GameObject.Instantiate(projectilePrefab);
-                projectileInst.transform.position = hit.point;
-                rope = new Rope(projectileInst.transform.position, transform.position, ropeSettings);
-                rope.Attach(projectileInst.transform, true, rope.Endpoint1);
-                rope.Attach(rb.transform, false, rope.Endpoint2);
-
+                ShootRope();
+            }
+            else
+            {
+                ReturnRope();
             }
         }
-        if (rope != null)
+        if (ropeOut && rope != null)
         {
             rope.physicsStep();
             rope.Render(lineRenderer);
         }
     }
 }
+
