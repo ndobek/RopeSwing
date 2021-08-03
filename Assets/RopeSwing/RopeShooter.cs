@@ -43,9 +43,9 @@ public class RopeShooter : MonoBehaviour
             if (projectileInst == null) projectileInst = GameObject.Instantiate(projectilePrefab);
             projectileInst.transform.position = grapplePoint;
 
-            // rope = new Rope(projectileInst.transform.position, transform.position, ropeSettings);
-            // rope.Attach(projectileInst.transform, true, rope.Endpoint1);
-            // rope.Attach(rb.transform, false, rope.Endpoint2);
+            rope = new Rope(projectileInst.transform.position, transform.position, ropeSettings);
+            rope.Attach(projectileInst.transform, true, rope.Endpoint1);
+            rope.Attach(rb.transform, false, rope.Endpoint2);
 
             float distance = Vector3.Distance(grapplePoint, rb.position);
 
