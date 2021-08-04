@@ -5,11 +5,12 @@ using UnityEngine;
 public class Rope
 {
     #region Rope Settings
-    public float mass;
-    public float slack;
+    public float mass = .001f;
+    public float slack = -0f;
+    public float maxStretch = 1;
 
-    public int numberOfSegments;
-    public int numberOfSimulations;
+    public int numberOfSegments = 30;
+    public int numberOfSimulations = 50;
 
     public bool collisions;
     public LayerMask collisionMask;
@@ -144,6 +145,7 @@ public class Rope
     public void CopySettings(Rope settings)
     {
         slack = settings.slack;
+        maxStretch = settings.maxStretch;
         mass = settings.mass;
         numberOfSegments = settings.numberOfSegments;
         numberOfSimulations = settings.numberOfSimulations;
@@ -180,14 +182,19 @@ public class Rope
 
     #region Physics Calculations
 
-    public static void AdjustDistance(RopeSegment obj1, RopeSegment obj2, float targetDistance)
+    public void AdjustDistance(RopeSegment obj1, RopeSegment obj2, float targetDistance)
     {
         Vector3 difference = (Vector3)obj1 - (Vector3)obj2;
         Vector3 direction = difference.normalized;
         float adjustmentDistance = difference.magnitude - targetDistance;
 
-        float adjustmentRatio1 = obj1.Mass / (obj1.Mass + obj2.Mass);
-        float adjustmentRatio2 = 1 - adjustmentRatio1;
+        float adjustmentRatio1 = .5f;
+        float adjustmentRatio2 = .5f;
+        if (currentLength() <= ropeLength * maxStretch)
+        {
+            adjustmentRatio1 = obj1.Mass / (obj1.Mass + obj2.Mass);
+            adjustmentRatio2 = 1 - adjustmentRatio1;
+        }
 
         obj1.Move(-direction * adjustmentDistance * adjustmentRatio2);
         obj2.Move(direction * adjustmentDistance * adjustmentRatio1);
@@ -240,9 +247,28 @@ public class Rope
             Vector3[] positions = GetPositions();
             renderer.positionCount = positions.Length;
             renderer.SetPositions(positions);
+            DebugRopeLength();
         }
     }
 
+    #endregion
+
+    public float currentLength()
+    {
+        float currentLength = 0;
+        for (int j = 0; j < ropeSegments.Count - 1; j++)
+        {
+            currentLength += (ropeSegments[j].PosCurrent - ropeSegments[j + 1].PosCurrent).magnitude;
+
+        }
+        return currentLength;
+    }
+    #region Debug
+
+    public void DebugRopeLength()
+    {
+        Debug.Log("Target Length: " + ropeLength + " Actual Length: " + currentLength());
+    }
     #endregion
 
 }
