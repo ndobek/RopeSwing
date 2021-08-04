@@ -6,10 +6,13 @@ public class Rope
 {
     #region Rope Settings
     public float mass;
-
+    public float slack;
 
     public int numberOfSegments;
     public int numberOfSimulations;
+
+    public bool collisions;
+    public LayerMask collisionMask;
 
     #endregion
     [HideInInspector]
@@ -63,6 +66,19 @@ public class Rope
         }
         public void Move(Vector3 movement)
         {
+            if (rope.collisions)
+            {
+                Ray ray = new Ray(PosCurrent, movement);
+                RaycastHit hit;
+
+                if (Physics.Raycast(ray, out hit, movement.magnitude + 1, rope.collisionMask))
+                {
+                    //movement = (PosCurrent - hit.point);
+                    //movement -= rope.ropeWidth * movement.normalized;
+                    movement = Vector3.zero;
+                };
+
+            }
             PosCurrent += movement;
         }
 
@@ -127,10 +143,12 @@ public class Rope
 
     public void CopySettings(Rope settings)
     {
+        slack = settings.slack;
         mass = settings.mass;
         numberOfSegments = settings.numberOfSegments;
         numberOfSimulations = settings.numberOfSimulations;
-
+        collisions = settings.collisions;
+        collisionMask = settings.collisionMask;
     }
 
 
@@ -138,7 +156,7 @@ public class Rope
     {
         Vector3 currentPoint = end1;
         Vector3 segmentVector = (end2 - end1) / numberOfSegments;
-        ropeLength = (end2 - end1).magnitude;
+        ropeLength = (end2 - end1).magnitude + slack;
         float segmentLength = ropeLength / numberOfSegments;
 
         ropeSegments.Add(new RopeSegment(this, currentPoint));
