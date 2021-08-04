@@ -4,11 +4,7 @@ using UnityEngine;
 
 public class RopeShooterOld : MonoBehaviour
 {
-    public float spring;
-    public float damper;
-    public float minStretch;
-    public float maxStretch;
-    public float maxDistance;
+        public float maxDistance;
 
     public Rope ropeSettings;
     [HideInInspector]
@@ -44,18 +40,18 @@ public class RopeShooterOld : MonoBehaviour
             projectileInst.transform.position = grapplePoint;
 
             rope = new Rope(projectileInst.transform.position, transform.position, ropeSettings);
-            rope.Attach(projectileInst.transform, true, rope.Endpoint1);
-            rope.Attach(rb.transform, false, rope.Endpoint2);
+            rope.Attach(projectileInst, true, rope.Endpoint1);
+            rope.Attach(rb.gameObject, false, rope.Endpoint2);
 
             float distance = Vector3.Distance(grapplePoint, rb.position);
 
-            joint = rb.gameObject.AddComponent<SpringJoint>();
-            joint.autoConfigureConnectedAnchor = false;
-            joint.connectedAnchor = grapplePoint;
-            joint.spring = spring;
-            joint.damper = damper;
-            joint.minDistance = distance * minStretch;
-            joint.maxDistance = distance * maxStretch;
+            // joint = rb.gameObject.AddComponent<SpringJoint>();
+            // joint.autoConfigureConnectedAnchor = false;
+            // joint.connectedAnchor = grapplePoint;
+            // joint.spring = spring;
+            // joint.damper = damper;
+            // joint.minDistance = distance * minStretch;
+            // joint.maxDistance = distance * maxStretch;
 
         }
     }

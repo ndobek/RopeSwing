@@ -13,6 +13,7 @@ public class HumanController : MonoBehaviour, IController
 
     public float rotateSpeed;
     public float moveSpeed;
+    public float maxVelocityChange;
     public float maxAirSpeed;
     public float sprintSpeed;
     public float maxStepHeight;
@@ -36,13 +37,19 @@ public class HumanController : MonoBehaviour, IController
         Vector3 newVelocity = rigidBody.velocity;
         if (onGround)
         {
-            Vector3 v = Quaternion.Euler(0, lookTransform.rotation.eulerAngles.y, 0) * input;
-            v *= sprinting ? sprintSpeed : moveSpeed;
+            Vector3 targetV = Quaternion.Euler(0, lookTransform.rotation.eulerAngles.y, 0) * input;
+            targetV *= sprinting ? sprintSpeed : moveSpeed;
             //CheckStep(v, stepRayCastDistance);
-            rigidBody.velocity = new Vector3(v.x, newVelocity.y, v.z);
+
+            Vector3 vDiff = targetV - rigidBody.velocity;
+            vDiff.x = Mathf.Clamp(vDiff.x, -maxVelocityChange, maxVelocityChange);
+            vDiff.z = Mathf.Clamp(vDiff.z, -maxVelocityChange, maxVelocityChange);
+            vDiff.y = 0;
+
+            rigidBody.AddForce(vDiff, ForceMode.VelocityChange);
         }
         else
-        {          
+        {
             Vector3 localdv = input *= airControl;
             Vector3 localv = lookTransform.InverseTransformVector(rigidBody.velocity);
 
@@ -54,10 +61,10 @@ public class HumanController : MonoBehaviour, IController
             else
             {
                 Vector3 v = new Vector3(localv.z, localv.y, localv.z);
-                if (Mathf.Abs(localv.x + localdv.x) < maxAirSpeed) localv.x =  Mathf.Clamp(localv.x + localdv.x, -maxAirSpeed, maxAirSpeed);
+                if (Mathf.Abs(localv.x + localdv.x) < maxAirSpeed) localv.x = Mathf.Clamp(localv.x + localdv.x, -maxAirSpeed, maxAirSpeed);
 
                 //if (localv.y + localdv.y < maxAirSpeed) localv.y += localdv.y;
-                if (Mathf.Abs(localv.z + localdv.z) < maxAirSpeed) localv.z =  Mathf.Clamp(localv.z + localdv.z, -maxAirSpeed, maxAirSpeed);
+                if (Mathf.Abs(localv.z + localdv.z) < maxAirSpeed) localv.z = Mathf.Clamp(localv.z + localdv.z, -maxAirSpeed, maxAirSpeed);
 
                 rigidBody.velocity = lookTransform.TransformVector(localv);
             }
@@ -75,16 +82,16 @@ public class HumanController : MonoBehaviour, IController
     public void CheckStep(Vector3 point)
     {
         Vector3 pointToCheck = groundChecker.position;
-        for(float offset = 0; offset < maxStepHeight; offset += maxStepHeight/stepCheckerResolution)
+        for (float offset = 0; offset < maxStepHeight; offset += maxStepHeight / stepCheckerResolution)
         {
-            
+
         }
 
     }
 
     public void Jump()
     {
-        if(onGround) rigidBody.AddForce(Vector3.up * jumpHeight, ForceMode.VelocityChange);
+        if (onGround) rigidBody.AddForce(Vector3.up * jumpHeight, ForceMode.VelocityChange);
     }
 
     public void CheckOnGround()
