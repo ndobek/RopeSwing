@@ -66,12 +66,16 @@ public class Rope
         }
         public void Move(Vector3 movement)
         {
+            PosCurrent += movement;
+        }
+
+        public void ConstrainAttached()
+        {
             if (attachment != null)
             {
-                attachment.Move(movement);
+                attachment.Move(PosCurrent - attachment.transform.position);
                 PosCurrent = attachment.transform.position;
             }
-            else PosCurrent += movement;
         }
         #endregion
     }
@@ -108,7 +112,10 @@ public class Rope
 
         public void Move(Vector3 movement)
         {
-            if (rigidbody != null) rigidbody.AddForce(movement, ForceMode.Acceleration);
+            if (rigidbody != null)
+            {
+                rigidbody.AddForce(movement, ForceMode.VelocityChange);
+            }
         }
     }
 
@@ -166,7 +173,7 @@ public class Rope
         float adjustmentDistance;
 
         if (stretch > maxStretch) adjustmentDistance = difference.magnitude - (targetDistance * maxStretch);
-        else if (stretch > minStretch) adjustmentDistance = difference.magnitude - (targetDistance * minStretch);
+        else if (stretch < minStretch) adjustmentDistance = difference.magnitude - (targetDistance * minStretch);
         else adjustmentDistance = difference.magnitude - targetDistance;
 
         float adjustmentRatio1 = obj1.Mass / (obj1.Mass + obj2.Mass);
@@ -191,7 +198,13 @@ public class Rope
                 for (int j = 0; j < ropeSegments.Count - 1; j++)
                 {
                     AdjustDistance(ropeSegments[j], ropeSegments[j + 1], ropeSegments[j + 1].SegmentLength, maxStretch, minStretch);
+
                 }
+            }
+
+            foreach (RopeSegment segment in ropeSegments)
+            {
+                segment.ConstrainAttached();
             }
         }
     }
