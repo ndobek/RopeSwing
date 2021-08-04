@@ -5,10 +5,7 @@ using UnityEngine;
 public class Rope
 {
     #region Rope Settings
-
-    public float maxStretch = 1.1f;
-    public float minStretch = .9f;
-    public float mass = 1;
+    public float mass;
 
 
     public int numberOfSegments;
@@ -130,9 +127,10 @@ public class Rope
 
     public void CopySettings(Rope settings)
     {
+        mass = settings.mass;
         numberOfSegments = settings.numberOfSegments;
         numberOfSimulations = settings.numberOfSimulations;
-        mass = settings.mass;
+
     }
 
 
@@ -164,17 +162,11 @@ public class Rope
 
     #region Physics Calculations
 
-    public static void AdjustDistance(RopeSegment obj1, RopeSegment obj2, float targetDistance, float maxStretch, float minStretch)
+    public static void AdjustDistance(RopeSegment obj1, RopeSegment obj2, float targetDistance)
     {
         Vector3 difference = (Vector3)obj1 - (Vector3)obj2;
         Vector3 direction = difference.normalized;
-        float distance = difference.magnitude - targetDistance;
-        float stretch = distance / targetDistance;
-        float adjustmentDistance;
-
-        if (stretch > maxStretch) adjustmentDistance = difference.magnitude - (targetDistance * maxStretch);
-        else if (stretch < minStretch) adjustmentDistance = difference.magnitude - (targetDistance * minStretch);
-        else adjustmentDistance = difference.magnitude - targetDistance;
+        float adjustmentDistance = difference.magnitude - targetDistance;
 
         float adjustmentRatio1 = obj1.Mass / (obj1.Mass + obj2.Mass);
         float adjustmentRatio2 = 1 - adjustmentRatio1;
@@ -197,7 +189,7 @@ public class Rope
             {
                 for (int j = 0; j < ropeSegments.Count - 1; j++)
                 {
-                    AdjustDistance(ropeSegments[j], ropeSegments[j + 1], ropeSegments[j + 1].SegmentLength, maxStretch, minStretch);
+                    AdjustDistance(ropeSegments[j], ropeSegments[j + 1], ropeSegments[j + 1].SegmentLength);
 
                 }
             }
