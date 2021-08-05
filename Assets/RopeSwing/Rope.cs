@@ -6,8 +6,9 @@ public class Rope
 {
     #region Rope Settings
     public float mass = .001f;
-    public float slack = -0f;
+    public float slack = 0f;
     public float maxStretch = 1;
+    public float springForce = 1;
 
     public int numberOfSegments = 30;
     public int numberOfSimulations = 50;
@@ -18,6 +19,54 @@ public class Rope
     #endregion
     [HideInInspector]
     public float ropeLength;
+
+     #region Constructors and Initialization
+
+
+    public Rope(Vector3 end1, Vector3 end2, Rope RopeSettings)
+    {
+        CopySettings(RopeSettings);
+        InitializeRope(end1, end2);
+    }
+
+    public void CopySettings(Rope settings)
+    {
+        slack = settings.slack;
+        springForce = settings.springForce;
+        maxStretch = settings.maxStretch;
+        mass = settings.mass;
+        numberOfSegments = settings.numberOfSegments;
+        numberOfSimulations = settings.numberOfSimulations;
+        collisions = settings.collisions;
+        collisionMask = settings.collisionMask;
+    }
+
+
+    public void InitializeRope(Vector3 end1, Vector3 end2)
+    {
+        Vector3 currentPoint = end1;
+        Vector3 segmentVector = (end2 - end1) / numberOfSegments;
+        ropeLength = (end2 - end1).magnitude + slack;
+        float segmentLength = ropeLength / numberOfSegments;
+
+        ropeSegments.Add(new RopeSegment(this, currentPoint));
+        for (int i = 0; i < numberOfSegments; i++)
+        {
+            currentPoint += segmentVector;
+            ropeSegments.Add(new RopeSegment(this, currentPoint, segmentLength));
+        }
+    }
+
+    public void Attach(Attachment obj, RopeSegment ropeSegment)
+    {
+        ropeSegment.attachment = obj;
+    }
+    public void Attach(GameObject obj, bool lockPosition, RopeSegment ropeSegment)
+    {
+        Attach(new Attachment(obj, lockPosition), ropeSegment);
+    }
+
+    #endregion
 
     #region Rope Segments
 
@@ -133,52 +182,7 @@ public class Rope
         }
     }
 
-    #region Constructors and Initialization
-
-
-    public Rope(Vector3 end1, Vector3 end2, Rope RopeSettings)
-    {
-        CopySettings(RopeSettings);
-        InitializeRope(end1, end2);
-    }
-
-    public void CopySettings(Rope settings)
-    {
-        slack = settings.slack;
-        maxStretch = settings.maxStretch;
-        mass = settings.mass;
-        numberOfSegments = settings.numberOfSegments;
-        numberOfSimulations = settings.numberOfSimulations;
-        collisions = settings.collisions;
-        collisionMask = settings.collisionMask;
-    }
-
-
-    public void InitializeRope(Vector3 end1, Vector3 end2)
-    {
-        Vector3 currentPoint = end1;
-        Vector3 segmentVector = (end2 - end1) / numberOfSegments;
-        ropeLength = (end2 - end1).magnitude + slack;
-        float segmentLength = ropeLength / numberOfSegments;
-
-        ropeSegments.Add(new RopeSegment(this, currentPoint));
-        for (int i = 0; i < numberOfSegments; i++)
-        {
-            currentPoint += segmentVector;
-            ropeSegments.Add(new RopeSegment(this, currentPoint, segmentLength));
-        }
-    }
-
-    public void Attach(Attachment obj, RopeSegment ropeSegment)
-    {
-        ropeSegment.attachment = obj;
-    }
-    public void Attach(GameObject obj, bool lockPosition, RopeSegment ropeSegment)
-    {
-        Attach(new Attachment(obj, lockPosition), ropeSegment);
-    }
-
-    #endregion
+   
 
     #region Physics Calculations
 
@@ -186,7 +190,7 @@ public class Rope
     {
         Vector3 difference = (Vector3)obj1 - (Vector3)obj2;
         Vector3 direction = difference.normalized;
-        float adjustmentDistance = difference.magnitude - targetDistance;
+        float adjustmentDistance = (difference.magnitude - targetDistance) * springForce;
 
         float adjustmentRatio1 = .5f;
         float adjustmentRatio2 = .5f;
