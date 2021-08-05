@@ -82,6 +82,10 @@ public class Rope
         public Vector3 PosPast;
         public Attachment attachment;
 
+        public Vector3 Velocity
+        {
+            get { return PosCurrent - PosPast; }
+        }
 
         public float Mass
         {
@@ -139,6 +143,8 @@ public class Rope
             }
         }
         #endregion
+
+
     }
 
     #endregion
@@ -175,7 +181,7 @@ public class Rope
         {
             if (rigidbody != null)
             {
-                rigidbody.AddForce(movement, ForceMode.VelocityChange);
+                rigidbody.AddForce(movement, ForceMode.Impulse);
             }
         }
     }
@@ -187,20 +193,12 @@ public class Rope
     public void AdjustDistance(RopeSegment obj1, RopeSegment obj2, float targetDistance)
     {
         Vector3 difference = (Vector3)obj1 - (Vector3)obj2;
+        float distance = difference.magnitude;
         Vector3 direction = difference.normalized;
-        float adjustmentDistance = (difference.magnitude - targetDistance);
+        float adjustmentDistance = distance - targetDistance;
 
-        float adjustmentRatio1 = .5f;
-        float adjustmentRatio2 = .5f;
-        if (isOverLength())
-        {
-            adjustmentRatio1 = obj1.Mass / (obj1.Mass + obj2.Mass);
-            adjustmentRatio2 = 1 - adjustmentRatio1;
-        }
-
-        obj1.Move(-direction * adjustmentDistance * adjustmentRatio2);
-        obj2.Move(direction * adjustmentDistance * adjustmentRatio1);
-
+        obj1.Move(-direction * adjustmentDistance * .5f);
+        obj2.Move(direction * adjustmentDistance * .5f);
     }
 
     public void physicsStep()
