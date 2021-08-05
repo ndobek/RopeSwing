@@ -8,7 +8,6 @@ public class Rope
     public float mass = .001f;
     public float slack = 0f;
     public float maxStretch = 1;
-    public float springForce = 1;
 
     public int numberOfSegments = 30;
     public int numberOfSimulations = 50;
@@ -20,7 +19,7 @@ public class Rope
     [HideInInspector]
     public float ropeLength;
 
-     #region Constructors and Initialization
+    #region Constructors and Initialization
 
 
     public Rope(Vector3 end1, Vector3 end2, Rope RopeSettings)
@@ -32,7 +31,6 @@ public class Rope
     public void CopySettings(Rope settings)
     {
         slack = settings.slack;
-        springForce = settings.springForce;
         maxStretch = settings.maxStretch;
         mass = settings.mass;
         numberOfSegments = settings.numberOfSegments;
@@ -182,7 +180,7 @@ public class Rope
         }
     }
 
-   
+
 
     #region Physics Calculations
 
@@ -190,11 +188,11 @@ public class Rope
     {
         Vector3 difference = (Vector3)obj1 - (Vector3)obj2;
         Vector3 direction = difference.normalized;
-        float adjustmentDistance = (difference.magnitude - targetDistance) * springForce;
+        float adjustmentDistance = (difference.magnitude - targetDistance);
 
         float adjustmentRatio1 = .5f;
         float adjustmentRatio2 = .5f;
-        if (currentLength() <= ropeLength * maxStretch)
+        if (isOverLength())
         {
             adjustmentRatio1 = obj1.Mass / (obj1.Mass + obj2.Mass);
             adjustmentRatio2 = 1 - adjustmentRatio1;
@@ -256,7 +254,10 @@ public class Rope
     }
 
     #endregion
-
+    public bool isOverLength()
+    {
+        return currentLength() <= ropeLength * maxStretch;
+    }
     public float currentLength()
     {
         float currentLength = 0;
