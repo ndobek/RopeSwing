@@ -9,6 +9,9 @@ public class Rope
     public float slack = 0f;
     public float maxStretch = 1;
 
+    public float ropeWidth;
+    public float elasticity;
+
     public int numberOfSegments = 30;
     public int numberOfSimulations = 50;
 
@@ -32,6 +35,8 @@ public class Rope
     {
         slack = settings.slack;
         maxStretch = settings.maxStretch;
+        ropeWidth = settings.ropeWidth;
+        elasticity = settings.elasticity;
         mass = settings.mass;
         numberOfSegments = settings.numberOfSegments;
         numberOfSimulations = settings.numberOfSimulations;
@@ -58,10 +63,11 @@ public class Rope
     public void Attach(Attachment obj, RopeSegment ropeSegment)
     {
         ropeSegment.attachment = obj;
+        obj.ropeSegment = ropeSegment;
     }
-    public void Attach(GameObject obj, bool lockPosition, RopeSegment ropeSegment)
+    public void Attach(GameObject obj, RopeSegment ropeSegment)
     {
-        Attach(new Attachment(obj, lockPosition), ropeSegment);
+        Attach(new Attachment(obj), ropeSegment);
     }
 
     #endregion
@@ -80,6 +86,7 @@ public class Rope
         public Rope rope;
         public Vector3 PosCurrent;
         public Vector3 PosPast;
+
         public Attachment attachment;
 
         public Vector3 Velocity
@@ -123,14 +130,14 @@ public class Rope
                 Ray ray = new Ray(PosCurrent, movement);
                 RaycastHit hit;
 
-                if (Physics.Raycast(ray, out hit, movement.magnitude + 1, rope.collisionMask))
+                if (Physics.Raycast(ray, out hit, movement.magnitude + rope.ropeWidth, rope.collisionMask))
                 {
-                    //movement = (PosCurrent - hit.point);
-                    //movement -= rope.ropeWidth * movement.normalized;
-                    movement = Vector3.zero;
+                    movement = (PosCurrent - hit.point);
+                    movement -= rope.ropeWidth * movement.normalized;
                 };
 
             }
+
             PosCurrent += movement;
         }
 
@@ -154,9 +161,10 @@ public class Rope
         #region Attached Bodies
         public Transform transform;
         public Rigidbody rigidbody;
+        public RopeSegment ropeSegment;
 
         #endregion
-
+        
         public float Mass
         {
             get { return rigidbody == null ? 0 : rigidbody.mass; }
@@ -164,12 +172,12 @@ public class Rope
 
         #region  Constructors
 
-        public Attachment(Transform _transform, Rigidbody _rigidbody, bool _lockPosition)
+        public Attachment(Transform _transform, Rigidbody _rigidbody)
         {
             transform = _transform;
             rigidbody = _rigidbody;
         }
-        public Attachment(GameObject gameObject, bool _lockPosition)
+        public Attachment(GameObject gameObject)
         {
             transform = gameObject.transform;
             rigidbody = gameObject.GetComponent<Rigidbody>();
