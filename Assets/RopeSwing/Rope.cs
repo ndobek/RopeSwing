@@ -132,7 +132,7 @@ public class Rope
 
                 if (Physics.Raycast(ray, out hit, movement.magnitude + rope.ropeWidth, rope.collisionMask))
                 {
-                    movement = (PosCurrent - hit.point);
+                    movement = hit.point - PosCurrent;
                     movement -= rope.ropeWidth * movement.normalized;
                 };
 
@@ -189,7 +189,8 @@ public class Rope
         {
             if (rigidbody != null)
             {
-                rigidbody.AddForce(movement, ForceMode.Impulse);
+                // rigidbody.AddForce(movement, ForceMode.Impulse);
+                rigidbody.MovePosition(rigidbody.position + movement);
             }
         }
     }
