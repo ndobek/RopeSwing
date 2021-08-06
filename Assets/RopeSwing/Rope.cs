@@ -9,9 +9,6 @@ public class Rope
     public float slack = 0f;
     public float maxStretch = 1;
 
-    public float ropeWidth;
-    public float elasticity;
-
     public int numberOfSegments = 30;
     public int numberOfSimulations = 50;
 
@@ -35,8 +32,6 @@ public class Rope
     {
         slack = settings.slack;
         maxStretch = settings.maxStretch;
-        ropeWidth = settings.ropeWidth;
-        elasticity = settings.elasticity;
         mass = settings.mass;
         numberOfSegments = settings.numberOfSegments;
         numberOfSimulations = settings.numberOfSimulations;
@@ -127,14 +122,14 @@ public class Rope
         {
             if (rope.collisions)
             {
-                Ray ray = new Ray(PosCurrent, movement);
-                RaycastHit hit;
+                // Ray ray = new Ray(PosCurrent, movement);
+                // RaycastHit hit;
 
-                if (Physics.Raycast(ray, out hit, movement.magnitude + rope.ropeWidth, rope.collisionMask))
-                {
-                    movement = hit.point - PosCurrent;
-                    movement -= rope.ropeWidth * movement.normalized;
-                };
+                // if (Physics.Raycast(ray, out hit, movement.magnitude + rope.ropeWidth, rope.collisionMask))
+                // {
+                //     movement = hit.point - PosCurrent;
+                //     movement -= rope.ropeWidth * movement.normalized;
+                // };
 
             }
 
@@ -189,8 +184,8 @@ public class Rope
         {
             if (rigidbody != null)
             {
-                // rigidbody.AddForce(movement, ForceMode.Impulse);
-                rigidbody.MovePosition(rigidbody.position + movement);
+                rigidbody.AddForce(movement, ForceMode.Impulse);
+                // rigidbody.MovePosition(rigidbody.position + movement);
             }
         }
     }

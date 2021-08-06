@@ -4,13 +4,11 @@ using UnityEngine;
 
 public class RopeShooterOld : MonoBehaviour
 {
-        public float maxDistance;
+    public float maxDistance;
 
     public Rope ropeSettings;
     [HideInInspector]
     public Rope rope;
-    private SpringJoint joint;
-    [HideInInspector]
     public Vector3 grapplePoint;
     [SerializeField]
     private GameObject projectilePrefab;
@@ -45,21 +43,12 @@ public class RopeShooterOld : MonoBehaviour
 
             float distance = Vector3.Distance(grapplePoint, rb.position);
 
-            // joint = rb.gameObject.AddComponent<SpringJoint>();
-            // joint.autoConfigureConnectedAnchor = false;
-            // joint.connectedAnchor = grapplePoint;
-            // joint.spring = spring;
-            // joint.damper = damper;
-            // joint.minDistance = distance * minStretch;
-            // joint.maxDistance = distance * maxStretch;
-
         }
     }
     void ReturnRope()
     {
         ropeOut = false;
         Destroy(projectileInst);
-        Destroy(joint);
         rope = null;
         lineRenderer.positionCount = 0;
     }
@@ -77,10 +66,22 @@ public class RopeShooterOld : MonoBehaviour
                 ReturnRope();
             }
         }
+    }
+
+    private void LateUpdate()
+    {
+        if (ropeOut && rope != null)
+        {
+            rope.Render(lineRenderer);
+        }
+    }
+
+    private void FixedUpdate()
+    {
+
         if (ropeOut && rope != null)
         {
             rope.physicsStep();
-            rope.Render(lineRenderer);
         }
     }
 }
