@@ -8,6 +8,7 @@ public class Rope
     public float mass = .001f;
     public float slack = 0f;
     public float maxStretch = 1;
+    public float ropeRadius = 1;
 
     public int numberOfSegments = 30;
     public int numberOfSimulations = 50;
@@ -33,6 +34,7 @@ public class Rope
         slack = settings.slack;
         maxStretch = settings.maxStretch;
         mass = settings.mass;
+        ropeRadius = settings.ropeRadius;
         numberOfSegments = settings.numberOfSegments;
         numberOfSimulations = settings.numberOfSimulations;
         collisions = settings.collisions;
@@ -123,14 +125,14 @@ public class Rope
         {
             if (rope.collisions)
             {
-                // Ray ray = new Ray(PosCurrent, movement);
-                // RaycastHit hit;
+                Ray ray = new Ray(PosCurrent, movement);
+                RaycastHit hit;
 
-                // if (Physics.Raycast(ray, out hit, movement.magnitude + rope.ropeWidth, rope.collisionMask))
-                // {
-                //     movement = hit.point - PosCurrent;
-                //     movement -= rope.ropeWidth * movement.normalized;
-                // };
+                if (Physics.Raycast(ray, out hit, movement.magnitude + rope.ropeRadius, rope.collisionMask))
+                {
+                    movement = hit.point - PosCurrent;
+                    movement -= rope.ropeRadius * movement.normalized;
+                };
 
             }
 
@@ -202,9 +204,10 @@ public class Rope
         float distance = difference.magnitude;
         Vector3 direction = difference.normalized;
         float adjustmentDistance = distance - targetDistance;
+        float massMod = obj1.Mass / (obj1.Mass + obj2.Mass);
 
-        obj1.Move(-direction * adjustmentDistance * .5f);
-        obj2.Move(direction * adjustmentDistance * .5f);
+        obj1.Move(-direction * adjustmentDistance * (1-massMod));
+        obj2.Move(direction * adjustmentDistance * massMod);
     }
 
     public void PhysicsStep()
@@ -223,14 +226,11 @@ public class Rope
                 {
                     AdjustDistance(ropePoints[j], ropePoints[j + 1], ropePoints[j + 1].SegmentLength);
                 }
-
-
             }
 
             foreach (RopePoint point in ropePoints)
             {
                 point.ConstrainAttached();
-
             }
 
         }

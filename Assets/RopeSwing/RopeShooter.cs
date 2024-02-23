@@ -9,16 +9,17 @@ public class RopeShooter : MonoBehaviour
     public Rope ropeSettings;
     [HideInInspector]
     public Rope rope;
+    [HideInInspector]
     public Vector3 grapplePoint;
     [SerializeField]
     private GameObject projectilePrefab;
     [HideInInspector]
     private GameObject projectileInst;
-    public Rigidbody rb;
+    public Rigidbody PlayerRB;
     public LineRenderer lineRenderer;
     public LayerMask swingableSurfaces;
     public int mouseButton;
-
+    [HideInInspector]
     public bool ropeOut = false;
 
     private void Awake()
@@ -39,9 +40,9 @@ public class RopeShooter : MonoBehaviour
 
             rope = new Rope(projectileInst.transform.position, transform.position, ropeSettings);
             rope.Attach(projectileInst, rope.Endpoint1);
-            rope.Attach(rb.gameObject, rope.Endpoint2);
+            rope.Attach(PlayerRB.gameObject, rope.Endpoint2);
 
-            float distance = Vector3.Distance(grapplePoint, rb.position);
+            float distance = Vector3.Distance(grapplePoint, PlayerRB.position);
 
         }
     }
