@@ -47,20 +47,20 @@ public class Rope
         ropeLength = (end2 - end1).magnitude + slack;
         float segmentLength = ropeLength / numberOfSegments;
 
-        ropeSegments.Add(new RopeSegment(this, currentPoint));
+        ropeSegments.Add(new RopePoint(this, currentPoint));
         for (int i = 0; i < numberOfSegments; i++)
         {
             currentPoint += segmentVector;
-            ropeSegments.Add(new RopeSegment(this, currentPoint, segmentLength));
+            ropeSegments.Add(new RopePoint(this, currentPoint, segmentLength));
         }
     }
 
-    public void Attach(Attachment obj, RopeSegment ropeSegment)
+    public void Attach(Attachment obj, RopePoint ropeSegment)
     {
         ropeSegment.attachment = obj;
         obj.ropeSegment = ropeSegment;
     }
-    public void Attach(GameObject obj, RopeSegment ropeSegment)
+    public void Attach(GameObject obj, RopePoint ropeSegment)
     {
         Attach(new Attachment(obj), ropeSegment);
     }
@@ -69,11 +69,11 @@ public class Rope
 
     #region Rope Segments
 
-    public List<RopeSegment> ropeSegments = new List<RopeSegment>();
-    public RopeSegment Endpoint1 { get { return ropeSegments[0]; } }
-    public RopeSegment Endpoint2 { get { return ropeSegments[ropeSegments.Count - 1]; } }
+    public List<RopePoint> ropeSegments = new List<RopePoint>();
+    public RopePoint Endpoint1 { get { return ropeSegments[0]; } }
+    public RopePoint Endpoint2 { get { return ropeSegments[ropeSegments.Count - 1]; } }
 
-    public class RopeSegment
+    public class RopePoint
     {
         #region Segment Info
         public float SegmentLength;
@@ -98,26 +98,27 @@ public class Rope
 
         #region Constructors and Conversions
 
-        public RopeSegment(Rope _rope, Vector3 pos, float segmentLength = 0)
+        public RopePoint(Rope _rope, Vector3 pos, float segmentLength = 0)
         {
             rope = _rope;
             PosCurrent = pos;
             PosPast = pos;
             SegmentLength = segmentLength;
         }
-        public static explicit operator Vector3(RopeSegment obj) => obj.PosCurrent;
+        public static explicit operator Vector3(RopePoint obj) => obj.PosCurrent;
 
         #endregion
 
         #region Physics Calculations
 
-        public void physicsStep()
+        public void MoveFromVelocity()
         {
             Vector3 velocity = PosCurrent - PosPast;
             PosPast = PosCurrent;
             velocity += GravityVector * Time.deltaTime * Time.deltaTime;
             Move(velocity);
         }
+
         public void Move(Vector3 movement)
         {
             if (rope.collisions)
@@ -144,6 +145,7 @@ public class Rope
                 PosCurrent = attachment.transform.position;
             }
         }
+
         #endregion
 
 
@@ -156,10 +158,10 @@ public class Rope
         #region Attached Bodies
         public Transform transform;
         public Rigidbody rigidbody;
-        public RopeSegment ropeSegment;
+        public RopePoint ropeSegment;
 
         #endregion
-        
+
         public float Mass
         {
             get { return rigidbody == null ? 0 : rigidbody.mass; }
@@ -194,7 +196,7 @@ public class Rope
 
     #region Physics Calculations
 
-    public void AdjustDistance(RopeSegment obj1, RopeSegment obj2, float targetDistance)
+    public void AdjustDistance(RopePoint obj1, RopePoint obj2, float targetDistance)
     {
         Vector3 difference = (Vector3)obj1 - (Vector3)obj2;
         float distance = difference.magnitude;
@@ -205,13 +207,14 @@ public class Rope
         obj2.Move(direction * adjustmentDistance * .5f);
     }
 
-    public void physicsStep()
+    public void PhysicsStep()
     {
         if (ropeSegments != null && ropeSegments.Count > 0)
         {
-            foreach (RopeSegment segment in ropeSegments)
+            
+            foreach (RopePoint point in ropeSegments)
             {
-                segment.physicsStep();
+                point.MoveFromVelocity();
             }
 
             for (int i = 0; i < numberOfSimulations; i++)
@@ -219,14 +222,17 @@ public class Rope
                 for (int j = 0; j < ropeSegments.Count - 1; j++)
                 {
                     AdjustDistance(ropeSegments[j], ropeSegments[j + 1], ropeSegments[j + 1].SegmentLength);
-
                 }
+
+
             }
 
-            foreach (RopeSegment segment in ropeSegments)
+            foreach (RopePoint point in ropeSegments)
             {
-                segment.ConstrainAttached();
+                point.ConstrainAttached();
+
             }
+
         }
     }
 
@@ -256,11 +262,12 @@ public class Rope
     }
 
     #endregion
-    public bool isOverLength()
+
+    public bool IsOverLength()
     {
-        return currentLength() <= ropeLength * maxStretch;
+        return CurrentLength() <= ropeLength * maxStretch;
     }
-    public float currentLength()
+    public float CurrentLength()
     {
         float currentLength = 0;
         for (int j = 0; j < ropeSegments.Count - 1; j++)
@@ -270,12 +277,14 @@ public class Rope
         }
         return currentLength;
     }
+
     #region Debug
 
     public void DebugRopeLength()
     {
-        Debug.Log("Target Length: " + ropeLength + " Actual Length: " + currentLength());
+        Debug.Log("Target Length: " + ropeLength + " Actual Length: " + CurrentLength());
     }
+
     #endregion
 
 }

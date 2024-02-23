@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class RopeShooterOld : MonoBehaviour
+public class RopeShooter : MonoBehaviour
 {
     public float maxDistance;
 
@@ -81,8 +81,9 @@ public class RopeShooterOld : MonoBehaviour
 
         if (ropeOut && rope != null)
         {
-            rope.physicsStep();
+            rope.PhysicsStep();
         }
+
     }
 }
 
