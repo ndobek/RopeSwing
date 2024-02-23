@@ -47,11 +47,11 @@ public class Rope
         ropeLength = (end2 - end1).magnitude + slack;
         float segmentLength = ropeLength / numberOfSegments;
 
-        ropeSegments.Add(new RopePoint(this, currentPoint));
+        ropePoints.Add(new RopePoint(this, currentPoint));
         for (int i = 0; i < numberOfSegments; i++)
         {
             currentPoint += segmentVector;
-            ropeSegments.Add(new RopePoint(this, currentPoint, segmentLength));
+            ropePoints.Add(new RopePoint(this, currentPoint, segmentLength));
         }
     }
 
@@ -69,9 +69,9 @@ public class Rope
 
     #region Rope Segments
 
-    public List<RopePoint> ropeSegments = new List<RopePoint>();
-    public RopePoint Endpoint1 { get { return ropeSegments[0]; } }
-    public RopePoint Endpoint2 { get { return ropeSegments[ropeSegments.Count - 1]; } }
+    public List<RopePoint> ropePoints = new List<RopePoint>();
+    public RopePoint Endpoint1 { get { return ropePoints[0]; } }
+    public RopePoint Endpoint2 { get { return ropePoints[ropePoints.Count - 1]; } }
 
     public class RopePoint
     {
@@ -209,25 +209,25 @@ public class Rope
 
     public void PhysicsStep()
     {
-        if (ropeSegments != null && ropeSegments.Count > 0)
+        if (ropePoints != null && ropePoints.Count > 0)
         {
             
-            foreach (RopePoint point in ropeSegments)
+            foreach (RopePoint point in ropePoints)
             {
                 point.MoveFromVelocity();
             }
 
             for (int i = 0; i < numberOfSimulations; i++)
             {
-                for (int j = 0; j < ropeSegments.Count - 1; j++)
+                for (int j = 0; j < ropePoints.Count - 1; j++)
                 {
-                    AdjustDistance(ropeSegments[j], ropeSegments[j + 1], ropeSegments[j + 1].SegmentLength);
+                    AdjustDistance(ropePoints[j], ropePoints[j + 1], ropePoints[j + 1].SegmentLength);
                 }
 
 
             }
 
-            foreach (RopePoint point in ropeSegments)
+            foreach (RopePoint point in ropePoints)
             {
                 point.ConstrainAttached();
 
@@ -242,17 +242,17 @@ public class Rope
 
     public Vector3[] GetPositions()
     {
-        Vector3[] result = new Vector3[ropeSegments.Count];
+        Vector3[] result = new Vector3[ropePoints.Count];
         for (int i = 0; i < result.Length; i++)
         {
-            result[i] = (Vector3)ropeSegments[i];
+            result[i] = (Vector3)ropePoints[i];
         }
         return result;
     }
 
     public void Render(LineRenderer renderer)
     {
-        if (ropeSegments != null && ropeSegments.Count > 0)
+        if (ropePoints != null && ropePoints.Count > 0)
         {
             Vector3[] positions = GetPositions();
             renderer.positionCount = positions.Length;
@@ -270,9 +270,9 @@ public class Rope
     public float CurrentLength()
     {
         float currentLength = 0;
-        for (int j = 0; j < ropeSegments.Count - 1; j++)
+        for (int j = 0; j < ropePoints.Count - 1; j++)
         {
-            currentLength += (ropeSegments[j].PosCurrent - ropeSegments[j + 1].PosCurrent).magnitude;
+            currentLength += (ropePoints[j].PosCurrent - ropePoints[j + 1].PosCurrent).magnitude;
 
         }
         return currentLength;
